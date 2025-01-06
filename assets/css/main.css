@@ -1,0 +1,50 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+@tailwind screens;
+
+:root {
+    --color-primary: #0D2533;
+    --color-secondary: #000C15;
+    --color-blue: #1E73D9;
+    --color-gray: #E5E4E5;
+    --color-dark-gray: #D9D9D9;
+    --color-success: #267500;
+}
+
+body {
+    @apply font-sans text-base bg-primary-gray accent-primary-blue;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+/* Стиль для ползунка */
+::-webkit-scrollbar-thumb {
+    background-color: var(--color-primary);
+    border-radius: 3px;
+    border: 1px solid white;
+}
+
+/* Стиль для области трека */
+::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 6px;
+}
+
+.nuxt-link-active {
+    font-weight: bold;
+    border-bottom: 1px solid var(--color-primary);
+}
+
+.nuxt-link-exact-active {
+    font-weight: bold;
+}
+
+
+.grid-rows-layout {
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+}
