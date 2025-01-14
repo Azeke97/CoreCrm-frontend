@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import NotificationManager from "~/components/shared/layout/NotificationManager.vue";
+import NotificationManager from "~/components/shared/layout/NotificationManager.vue"
 </script>
 
 <template>

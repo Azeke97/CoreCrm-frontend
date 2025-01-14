@@ -1,115 +1,64 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import type { UserProfile, FetchUserProfileResponse } from '~/types/users'
-import { useNotification } from '~/composables/useNotification'
-import { useClientApi } from '~/api/base/useClientApi'
-
+import { ref, computed } from 'vue'
+import type { UserProfile } from '~/types/users'
+import { fetchUserProfileApi } from '~/api/endpoints/user'
+import {useNotification} from "~/composables/useNotification";
 
 export const useAuthStore = defineStore('auth', () => {
-  const { addNotification } = useNotification()
 
-  const authenticated = ref<boolean>(false)
-  const profile = ref({} as UserProfile)
-  const token = ref<string | null>(null)
+  const { notification } = useNotification()
+  const tokenCookie = useCookie<string | null>('auth_token')
+  const token = ref<string | null>(tokenCookie.value)
+  const profile = ref<UserProfile | null>(null)
+  const authenticated = computed(() => !!token.value)
 
-  const sync = async (newToken: string): Promise<boolean> => {
-    try {
-      authenticated.value = true
-      token.value = newToken
-
-      if (import.meta.client) {
-        localStorage.setItem('token', newToken)
-      }
-
-      const profileSynced = await fetchUserProfile()
-      if (profileSynced) {
-        return true
-      }
-      logout()
-      return false
-    } catch (error: any) {
-      console.error('Ошибка при синхронизации токена:', error)
-      logout()
-      return false
+  const headers = computed(() => {
+    if (token.value) {
+      return { Authorization: `Bearer ${token.value}` }
     }
-  }
-
-  const fetchUserProfile = async (): Promise<boolean> => {
-    try {
-      const response = await useClientApi('/api/user') as FetchUserProfileResponse
-
-      if (response.success) {
-        profile.value = response.data as UserProfile
-        return true
-      } else {
-        console.error('Не удалось загрузить профиль: ', response.message)
-        return false
-      }
-    } catch (error) {
-      const status = (error as any)?.response?.status
-      if (status === 401) {
-        addNotification('Вы не авторизованы. Токен истек или недействителен.', 'error')
-      } else {
-        console.error('Ошибка при загрузке профиля пользователя:', error)
-      }
-      return false
-    }
-  };
-
-
-
-  const loadToken = async () => {
-    if (import.meta.client) {
-      const savedToken = localStorage.getItem('token')
-      if (savedToken) {
-        token.value = savedToken
-        authenticated.value = true
-
-        const profileLoaded = await fetchUserProfile()
-        if (!profileLoaded) {
-          console.warn('Профиль не загружен. Выполняется логаут.')
-          logout()
-        }
-      }
-    }
-  }
-
-  const logout = (redirect: boolean = false) => {
-    console.log('Выполняется логаут. Токен удален.');
-    token.value = null
-    authenticated.value = false
-
-    profile.value = {} as UserProfile
-
-    if (import.meta.client) {
-      localStorage.removeItem('token')
-      navigateTo('/login')
-    }
-
-    if (redirect) {
-      console.log(redirect)
-    }
-  }
-
-
-
-  const hasAttribute = (attribute: string, value: string | number | boolean): boolean => {
-    // @ts-ignore
-    return company.value && company.value[attribute] && company.value[attribute] === value
-  }
-
-  onMounted(() => {
-    loadToken().catch((error) => {
-      console.error('Ошибка при загрузке токена:', error)
-    })
+    return {}
   })
 
+  const loadToken = () => {
+    token.value = tokenCookie.value
+  }
+
+  const sync = async (newToken: string) => {
+    token.value = newToken
+    tokenCookie.value = newToken
+    await fetchUserProfile()
+  }
+
+  const fetchUserProfile = async () => {
+    try {
+      const response = await fetchUserProfileApi()
+      if (response.success) {
+        profile.value = response.data
+        return true
+      } else {
+        notification('Ошибка загрузки профиля', 'error')
+      }
+    } catch (e) {
+      console.error(e)
+      logout()
+      return false
+    }
+  }
+
+  const logout = () => {
+    token.value = null
+    profile.value = null
+    tokenCookie.value = null
+    navigateTo('/login')
+  }
+
   return {
-    sync,
-    authenticated,
-    profile,
     token,
+    headers,
+    profile,
+    authenticated,
+    loadToken,
+    sync,
     logout,
-    hasAttribute
   }
 })
