@@ -1,24 +1,24 @@
 import { defineStore } from 'pinia'
-import type {Registration} from '~/types/registration'
+import type { RegistrationResponse } from '~/types/registration'
 
 export const useRegistrationStore = defineStore('registration', () => {
-  const userData = ref<Registration | null>(null)
-  const registrationStep = ref<number>(1)
+  const userData = ref<RegistrationResponse | null>(null)
+  const registrationStep = ref(1)
   const errors = ref<string[]>([])
 
-  function setUserData (data: Registration) {
+  const setUserData = (data: RegistrationResponse) => {
     userData.value = data
   }
 
-  function setRegistrationStep (step: number) {
+  const setRegistrationStep = (step: number) => {
     registrationStep.value = step
   }
 
-  function addError (error: string) {
+  const addError = (error: string) => {
     errors.value.push(error)
   }
 
-  function clearErrors () {
+  const clearErrors = () => {
     errors.value = []
   }
 
@@ -27,8 +27,8 @@ export const useRegistrationStore = defineStore('registration', () => {
     registrationStep,
     errors,
     setUserData,
-    addError,
     setRegistrationStep,
-    clearErrors
+    addError,
+    clearErrors,
   }
 })

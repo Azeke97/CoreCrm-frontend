@@ -1,64 +1,79 @@
 import { defineStore } from 'pinia'
-import { ref, computed } from 'vue'
-import type { UserProfile } from '~/types/users'
-import { fetchUserProfileApi } from '~/api/endpoints/user'
-import {useNotification} from "~/composables/useNotification";
+import { useUserStore } from '~/store/user'
+import type { LoginRequest, LoginResponse } from "~/types/auth"
+import { useAuthRepository } from "~/repositories/authRepository"
+import type { RegistrationRequest, RegistrationResponse } from "~/types/registration"
 
 export const useAuthStore = defineStore('auth', () => {
+  const { login: loginApi } = useAuthRepository()
+  const { register: registerApi } = useAuthRepository()
+  const userStore = useUserStore()
 
-  const { notification } = useNotification()
-  const tokenCookie = useCookie<string | null>('auth_token')
-  const token = ref<string | null>(tokenCookie.value)
-  const profile = ref<UserProfile | null>(null)
   const authenticated = computed(() => !!token.value)
 
-  const headers = computed(() => {
-    if (token.value) {
-      return { Authorization: `Bearer ${token.value}` }
+  const token = ref<string | null>(null)
+
+  const setToken = (newToken: string | null) => {
+    if (import.meta.client) {
+      token.value = newToken
+      localStorage.setItem('auth_token', newToken ?? '')
     }
-    return {}
-  })
+  }
 
   const loadToken = () => {
-    token.value = tokenCookie.value
+    if (import.meta.client) {
+      token.value = localStorage.getItem('auth_token')
+    }
   }
 
   const sync = async (newToken: string) => {
-    token.value = newToken
-    tokenCookie.value = newToken
-    await fetchUserProfile()
+    setToken(newToken)
+    await userStore.fetchUserProfile()
   }
 
-  const fetchUserProfile = async () => {
-    try {
-      const response = await fetchUserProfileApi()
-      if (response.success) {
-        profile.value = response.data
-        return true
-      } else {
-        notification('Ошибка загрузки профиля', 'error')
-      }
-    } catch (e) {
-      console.error(e)
-      logout()
-      return false
+  const login = async (credentials: LoginRequest): Promise<LoginResponse> => {
+    const response = await loginApi(credentials)
+
+    if (isSuccessResponse(response)) {
+      await sync(response.data.token)
+      return response.data
     }
+
+    throw response
+  }
+
+  const register = async (payload: RegistrationRequest): Promise<RegistrationResponse> => {
+    const response = await registerApi(payload)
+
+    if (isSuccessResponse(response)) {
+      return response.data
+    }
+
+    throw response
   }
 
   const logout = () => {
-    token.value = null
-    profile.value = null
-    tokenCookie.value = null
+    setToken(null)
+    userStore.reset()
     navigateTo('/login')
+  }
+
+  const headers = computed(() => {
+    return token.value ? { Authorization: `Bearer ${token.value}` } : {}
+  })
+
+  if (import.meta.client) {
+    token.value = localStorage.getItem('auth_token')
   }
 
   return {
     token,
-    headers,
-    profile,
     authenticated,
+    headers,
     loadToken,
     sync,
+    login,
+    register,
     logout,
   }
 })

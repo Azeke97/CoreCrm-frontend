@@ -1,34 +1,33 @@
-import { ref } from 'vue'
-
+// ~/composables/useNotification.ts
 type NotificationType = 'success' | 'error' | 'info' | 'warning'
 
 interface Notification {
+  id: number
   message: string
   type: NotificationType
   time: number
 }
 
-const notifications = ref<Notification[]>([])
-
 export const useNotification = () => {
-  // Добавление уведомления
-  const notification = (message: string, type: NotificationType = 'info', time: number = 5000) => {
-    const exists = notifications.value.some(notification => notification.message === message && notification.type === type)
+  const notifications = useState<Notification[]>('notifications', () => [])
+
+  const show = (message: string, type: NotificationType = 'info', time = 5000) => {
+    const exists = notifications.value.some(n => n.message === message && n.type === type)
     if (exists) return
 
-    notifications.value.push({ message, type, time })
+    const id = Date.now() + Math.floor(Math.random() * 1000)
+    notifications.value.push({ id, message, type, time })
 
     setTimeout(() => {
-      notifications.value.shift()
+      const index = notifications.value.findIndex(n => n.id === id)
+      if (index !== -1) notifications.value.splice(index, 1)
     }, time)
   }
 
-  // Удаление уведомления
-  const removeNotification = (index: number) => {
-    notifications.value.splice(index, 1)
+  const remove = (id: number) => {
+    const index = notifications.value.findIndex(n => n.id === id)
+    if (index !== -1) notifications.value.splice(index, 1)
   }
-
-  // Генерация CSS-классов
   const typeClass = (type: NotificationType) => {
     const classes = {
       success: 'border-green-500',
@@ -39,11 +38,14 @@ export const useNotification = () => {
     return classes[type] || 'border-gray-500'
   }
 
-
   return {
     notifications,
-    notification,
-    removeNotification,
+    show,
+    success: (msg: string, time?: number) => show(msg, 'success', time),
+    error: (msg: string, time?: number) => show(msg, 'error', time),
+    info: (msg: string, time?: number) => show(msg, 'info', time),
+    warning: (msg: string, time?: number) => show(msg, 'warning', time),
+    remove,
     typeClass,
   }
 }

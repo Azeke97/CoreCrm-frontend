@@ -1,24 +1,30 @@
 <script setup lang="ts">
 import { useNotification } from '~/composables/useNotification'
 
-const { notifications, removeNotification, typeClass } = useNotification()
+const { notifications, remove, typeClass } = useNotification()
 </script>
 
 <template>
   <div class="fixed top-20 right-4 z-[2000]">
-    <transition-group name="notification" tag="div" class="flex flex-col gap-4">
+    <transition-group
+      name="notification"
+      tag="div"
+      class="flex flex-col gap-4"
+    >
       <div
-        v-for="(notification, index) in notifications"
-        :key="index"
+        v-for="notification in notifications"
+        :key="notification.id"
         class="relative p-4 rounded shadow-lg border-l-4 bg-white overflow-hidden"
         :class="typeClass(notification.type)"
         role="alert"
       >
-        <p>{{ notification.message }}</p>
+        <p>
+          {{ notification.message }}
+        </p>
 
         <button
           class="bg-none border-none cursor-pointer absolute top-0 right-1 text-black"
-          @click="removeNotification(index)"
+          @click="remove(notification.id)"
         >
           &times;
         </button>
@@ -32,6 +38,7 @@ const { notifications, removeNotification, typeClass } = useNotification()
     </transition-group>
   </div>
 </template>
+
 
 
 <style scoped>

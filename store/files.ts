@@ -1,56 +1,43 @@
 import { defineStore } from 'pinia'
-import { ref } from 'vue'
-import { uploadFileApi } from '~/api/endpoints/files'
+import { useFilesRepository } from '~/repositories/filesRepository'
+import type { UploadFileResponse } from '~/types/files'
 
 export const useFileStore = defineStore('file', () => {
-    const result = ref<any>(null)
-    const loading = ref<boolean>(false)
+    const result = ref<UploadFileResponse | null>(null)
+    const loading = ref(false)
+    const error = ref<string | null>(null)
+
+    const { uploadFile: uploadFileApi } = useFilesRepository()
 
     const uploadFile = async (file: File) => {
         if (!file) {
-            alert('Please select a file!')
+            error.value = 'Please select a file!'
             return
         }
 
+        loading.value = true
+        error.value = null
+
         try {
-            loading.value = true
             result.value = await uploadFileApi(file)
-        } catch (error: any) {
-            console.error('Error:', error)
-            result.value = { success: false, error: error.message }
+        } catch (err: any) {
+            console.error('Error uploading file:', err)
+            error.value = err.message || 'An unexpected error occurred.'
         } finally {
             loading.value = false
         }
     }
 
-    const uploadMultipleFiles = async (files: FileList) => {
-        if (!files || files.length === 0) {
-            alert('Please select files!')
-            return
-        }
-
-        try {
-            loading.value = true
-            const responses = []
-
-            for (const file of Array.from(files)) {
-                const response = await uploadFileApi(file)
-                responses.push(response)
-            }
-
-            result.value = responses
-        } catch (error: any) {
-            console.error('Error:', error)
-            result.value = { success: false, error: error.message }
-        } finally {
-            loading.value = false
-        }
+    const reset = () => {
+        result.value = null
+        error.value = null
     }
 
     return {
+        reset,
         result,
         loading,
+        error,
         uploadFile,
-        uploadMultipleFiles,
     }
 })

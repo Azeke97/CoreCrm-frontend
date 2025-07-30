@@ -1,13 +1,12 @@
-import type {BaseResponse} from "~/types/base";
-
-export interface Registration extends BaseResponse {
+export interface RegistrationRequest {
     name: string
     email: string
     password: string
 }
 
-export interface RegistrationResponse extends BaseResponse {
+export interface RegistrationResponse {
+    id: number
     name: string
     email: string
-    password: string
+    createdAt: string
 }

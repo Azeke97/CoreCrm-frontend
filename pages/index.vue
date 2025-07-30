@@ -1,12 +1,18 @@
 <script setup lang="ts">
-import ButtonUi from "~/components/shared/ui/ButtonUi.vue"
+import ButtonUi from "~/components/ui/ButtonUi.vue"
 import { useAuthStore } from '~/store/auth'
 
+// Initialize
 const authStore = useAuthStore()
+
+/**
+ * Handles user logout.
+ * Clears the authentication token and user profile,
+ * then redirects to the login page.
+ */
 const handleLogout = () => {
   authStore.logout()
 }
-
 </script>
 
 <template>
@@ -19,7 +25,6 @@ const handleLogout = () => {
       </div>
 
       Главная
-
     </div>
   </div>
 </template>

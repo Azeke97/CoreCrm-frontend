@@ -1,14 +1,14 @@
 export const useLoading = () => {
-  const loading = ref(false);
+  const loading = ref(false)
   const withLoading = async <T extends Promise<any>>(callback: T) => {
-    loading.value = true;
+    loading.value = true
 
-    const res = await callback;
+    const res = await callback
 
-    loading.value = false;
+    loading.value = false
 
-    return res;
-  };
+    return res
+  }
 
   return { loading, withLoading }
 }
